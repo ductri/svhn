@@ -100,14 +100,19 @@ def inference(images):
 def loss(list_logits, list_labels):
     """
 
-    :param list_logits: get from inference()
-    :param list_labels: list of 1-D tensor (batch_size) in the order of appearing in image
+    :param list_logits: get from inference(). len(list_logits) == NUM_DIGITS, shape of each item is (batch_size, num_classes)
+    :param list_labels: list of 1-D tensor (batch_size) in the order of appearing in image, len(list_labels) == NUM_DIGITS, shape of each item is (batch_size), range from 0 to 10 (11 classes)
     :return:
     """
     assert len(list_logits) == len(list_labels)
+    assert len(list_labels) == NUM_DIGITS
     losses = []
     for i in range(len(list_logits)):
-        losses.append(tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=list_labels[i], logits=list_logits[i])))
+        fucking_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=list_labels[i], logits=list_logits[i])
+        loss = tf.reduce_sum(fucking_losses)
+        losses.append(loss)
+        if i == 0:
+            tf.summary.scalar('loss_0', loss)
     total_loss = tf.reduce_sum(losses)
     tf.summary.scalar('total_loss', total_loss)
     return total_loss
