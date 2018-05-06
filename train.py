@@ -1,4 +1,7 @@
+import numpy as np
 import tensorflow as tf
+from datetime import datetime
+
 import model
 
 import svhn_input
@@ -9,7 +12,7 @@ NUM_DIGITS = model.NUM_DIGITS
 BATCH_SIZE = model.BATCH_SIZE
 
 
-def run_train(images_array, labels_array):
+def run_train():
     """
 
     :param images_array: shape=batch_size, image_height, image_width, 1
@@ -27,25 +30,36 @@ def run_train(images_array, labels_array):
         optimizer = model.train(batch_loss, global_step)
 
         init = tf.global_variables_initializer()
+        merged = tf.summary.merge_all()
+        train_writer = tf.summary.FileWriter('log/{}'.format(str(datetime.now())))
+
         with tf.Session() as sess:
             # Run the initializer
             sess.run(init)
+            step = 0
+            for images, labels in svhn_input.get_batch(batch_size=128, num_epoch=1):
+                images = images.reshape(list(images.shape) + [1])
+                labels = np.array(labels)
+                _, summary = sess.run([optimizer, merged], feed_dict=
+                    {input_placeholder: images,
+                    list_labels[0]: labels[:, 0],
+                     list_labels[1]: labels[:, 1],
+                     list_labels[2]: labels[:, 2],
+                     list_labels[3]: labels[:, 3],
+                     list_labels[4]: labels[:, 4],
+                     })
 
-            for i in range(100):
-                sess.run(optimizer, feed_dict=
-                    {input_placeholder: images_array,
-                    list_labels[0]: labels_array[0],
-                     list_labels[1]: labels_array[1],
-                     list_labels[2]: labels_array[2],
-                     list_labels[3]: labels_array[3],
-                     list_labels[4]: labels_array[4],
-                     }
-                )
+                train_writer.add_summary(summary, step)
+                step += 1
+                if step % 10 == 0:
+                    print(step)
+                    print(labels[0])
+
+
+def main(argv=None):  # pylint: disable=unused-argument
+    svhn_input.bootstrap()
+    run_train()
 
 
 if __name__ == '__main__':
-    svhn_input.bootstrap()
-    inputs, lables = svhn_input.get_one_batch_input(BATCH_SIZE)
-    inputs = inputs.reshape(list(inputs.shape) + [1])
-    list_labels = [lables[:, 0], lables[:, 1], lables[:, 2], lables[:, 3], lables[:, 4]]
-    optimizor = run_train(inputs, list_labels)
+    tf.app.run()

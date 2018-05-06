@@ -114,6 +114,8 @@ def load_data():
             x = []
             for i in range(len(names)):
                 path = os.path.join(SVHN_DATASET_PATH, data_type)
+                if len(image_dict[names[i]]['label']) > 5:
+                    continue
                 y.append(image_dict[names[i]]['label'])
                 image = Image.open(path + '/' + names[i])
                 left = int(min(image_dict[names[i]]['left']))
@@ -161,8 +163,10 @@ def load_data():
     f_test = gzip.open(os.path.join(SVHN_DATASET_PATH, 'testpkl.gz'), 'rb')
     test_set = pickle.load(f_test)
 
+    train_set['images'] = train_set['images']
+    train_set['labels'] = train_set['labels']
     f_test.close()
-    return  train_set, test_set
+    return train_set, test_set
 
 
 EMPTY = 11
@@ -173,17 +177,16 @@ def normalize_labels(dataset):
         new_labels = dataset['labels'][i] + [EMPTY]*(5-len(dataset['labels'][i]))
         new_labels = [label-1 for label in new_labels]
         dataset['labels'][i] = new_labels
+    dataset['labels'] = np.array(dataset['labels'])
 
 
-def show_sample(dataset):
+def show_sample(images, labels):
     plt.figure(figsize=(12, 14))
-    for i in range(10):
-        for j in range(10):
-            index = i*10 + j
-            plt.subplot(10, 10, index + 1)
-            plt.imshow(dataset['images'][index])
-            plt.title('-'.join([str(int(digit)) if digit != EMPTY else '-' for digit in dataset['labels'][index] ]))
-            plt.axis('off')
+    for i in range(len(images)):
+        plt.subplot(1, len(images), i + 1)
+        plt.imshow(images[i])
+        plt.title('-'.join([str(int(digit)) if digit != EMPTY else '-' for digit in labels[i]]))
+        plt.axis('off')
     plt.show()
 
 
@@ -192,6 +195,7 @@ def standardize_value(dataset):
         gray_image = np.array(Image.fromarray(dataset['images'][i]).convert('L')) * 1.0
         normalized_image = (gray_image - 255)/255
         dataset['images'][i] = normalized_image
+    dataset['images'] = np.array(dataset['images'])
 
 
 def bootstrap():
@@ -208,4 +212,26 @@ def get_one_batch_input(batch_size=128):
     index = np.random.randint(len(train_set['images']) - batch_size)
     return np.array(train_set['images'][index:index+batch_size]), np.array(train_set['labels'][index:index+batch_size])
 
+
+def get_batch(batch_size=128, num_epoch=10):
+    data_size = train_set['images'].shape[0]
+    num_batch_per_epoch = int(data_size/batch_size) - 1
+    for i in range(num_epoch):
+        shuffle_indices = np.random.permutation(np.arange(data_size))
+        shuffled_images = train_set['images'][shuffle_indices]
+        shuffled_labels = train_set['labels'][shuffle_indices]
+
+        for batch_idx in range(num_batch_per_epoch-1):
+            yield (shuffled_images[batch_idx*batch_size:(batch_idx+1)*batch_size],
+                   shuffled_labels[batch_idx*batch_size:(batch_idx+1)*batch_size])
+
+
+if __name__ == '__main__':
+    bootstrap()
+    index = 0
+    # for images, labels in get_batch(batch_size=128, num_epoch=1):
+    #     print(labels.shape)
+    #     index += 1
+    #     if index == 300:
+    #         break
 
