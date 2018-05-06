@@ -33,7 +33,9 @@ def run_train():
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter('log/{}'.format(str(datetime.now())))
 
-        with tf.Session() as sess:
+        config = tf.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = 0.3
+        with tf.Session(config=config) as sess:
             # Run the initializer
             sess.run(init)
             step = 0
