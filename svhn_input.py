@@ -1,5 +1,5 @@
 import os
-import urllib
+# import urllib
 import tarfile
 import h5py
 import numpy
@@ -37,7 +37,7 @@ def load_data():
                 'http://ufldl.stanford.edu/housenumbers/' + dataset
             )
             print('Downloading data from %s' % origin)
-            urllib.request.urlretrieve(origin, new_path)
+            # urllib.request.urlretrieve(origin, new_path)
         else:
             print('Files {} are already downloaded'.format(dataset))
         return new_path
