@@ -22,7 +22,7 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = svhn_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 # Constants describing the training process.
 MOVING_AVERAGE_DECAY = 0.9999  # The decay to use for the moving average.
 NUM_EPOCHS_PER_DECAY = 350.0  # Epochs after which learning rate decays.
-LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
+LEARNING_RATE_DECAY_FACTOR = 0.01  # Learning rate decay factor.
 INITIAL_LEARNING_RATE = 0.1  # Initial learning rate.
 
 
@@ -34,10 +34,9 @@ def inference(images):
     """
     with tf.variable_scope('conv1') as scope:
         channels_out1 = 16
-        if USE_FP16:
-            kernel = tf.get_variable('weights', shape=[5, 5, 1, channels_out1], dtype=tf.float16)
-        else:
-            kernel = tf.get_variable('weights', shape=[5, 5, 1, channels_out1], dtype=tf.float32)
+        kernel = tf.get_variable('weights_conv1', shape=[5, 5, 1, channels_out1], dtype=tf.float32,
+                                 initializer=tf.truncated_normal_initializer(stddev=5e-2))
+        tf.summary.histogram('weight', kernel)
         stride1 = 1
         conv1 = tf.nn.conv2d(input=images, filter=kernel, strides=[1, stride1, stride1, 1], padding='SAME')
 
@@ -53,9 +52,10 @@ def inference(images):
     with tf.variable_scope('conv2') as scope:
         channels_out2 = 32
         if USE_FP16:
-            kernel = tf.get_variable('weights', shape=[5, 5, channels_out1, channels_out2], dtype=tf.float16)
+            kernel = tf.get_variable('weights', shape=[5, 5, channels_out1, channels_out2], dtype=tf.float16, initializer=tf.truncated_normal_initializer(stddev=5e-2))
         else:
-            kernel = tf.get_variable('weights', shape=[5, 5, channels_out1, channels_out2], dtype=tf.float32)
+            kernel = tf.get_variable('weights', shape=[5, 5, channels_out1, channels_out2], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=5e-2))
+        tf.summary.histogram('weight', kernel)
         stride2 = 1
         conv2 = tf.nn.conv2d(input=norm1, filter=kernel, strides=[1, stride2, stride2, 1], padding='SAME')
         bias2 = tf.get_variable(name='bias', shape=[channels_out2], initializer=tf.constant_initializer(0))
@@ -72,11 +72,15 @@ def inference(images):
         dim = reshape.get_shape()[1].value
         num_weights3 = 500
         if USE_FP16:
-            weights = tf.get_variable('weights', shape=[dim, num_weights3], dtype=tf.float16)
+            weights = tf.get_variable('weights', shape=[dim, num_weights3], dtype=tf.float16, initializer=tf.truncated_normal_initializer(stddev=5e-2))
         else:
-            weights = tf.get_variable('weights', shape=[dim, num_weights3], dtype=tf.float32)
+            weights = tf.get_variable('weights', shape=[dim, num_weights3], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=5e-2))
+
+        tf.summary.histogram('weight', weights)
+
         bias3 = tf.get_variable(name='bias', shape=[num_weights3], initializer=tf.constant_initializer(0))
         local3 = tf.nn.relu(tf.matmul(reshape, weights) + bias3, name=scope.name)
+        local3 = tf.contrib.layers.layer_norm(local3)
         my_summarizer.activation_summary(local3)
     # linear layer(WX + b),
     # We don't apply softmax here because
@@ -86,9 +90,9 @@ def inference(images):
         softmax_linears = []
         for i in range(NUM_DIGITS):
             if USE_FP16:
-                weights = tf.get_variable('weights_{}'.format(i), [num_weights3, NUM_CLASSES], dtype=tf.float16)
+                weights = tf.get_variable('weights_{}'.format(i), [num_weights3, NUM_CLASSES], dtype=tf.float16, initializer=tf.truncated_normal_initializer(stddev=5e-2))
             else:
-                weights = tf.get_variable('weights_{}'.format(i), [num_weights3, NUM_CLASSES], dtype=tf.float32)
+                weights = tf.get_variable('weights_{}'.format(i), [num_weights3, NUM_CLASSES], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=5e-2))
 
             biases = tf.get_variable('bias_{}'.format(i), shape=[NUM_CLASSES], initializer=tf.constant_initializer(0.0))
             softmax_linear = tf.add(tf.matmul(local3, weights), biases, name=scope.name + str(i))
@@ -109,7 +113,7 @@ def loss(list_logits, list_labels):
     losses = []
     for i in range(len(list_logits)):
         fucking_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=list_labels[i], logits=list_logits[i])
-        loss = tf.reduce_sum(fucking_losses)
+        loss = tf.reduce_mean(fucking_losses)
         losses.append(loss)
         if i == 0:
             tf.summary.scalar('loss_0', loss)

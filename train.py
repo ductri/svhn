@@ -41,10 +41,11 @@ def run_train():
             # Run the initializer
             sess.run(init)
             step = 0
-            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=10):
+            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=100):
                 images = images.reshape(list(images.shape) + [1])
                 labels = np.array(labels, dtype=int)
-                _, summary = sess.run([optimizer, merged], feed_dict=
+
+                summary, _ = sess.run([merged, optimizer], feed_dict=
                     {input_placeholder: images,
                      list_labels[0]: labels[:, 0],
                      list_labels[1]: labels[:, 1],
@@ -55,7 +56,7 @@ def run_train():
 
                 train_writer.add_summary(summary, step)
                 step += 1
-                if step % 50 == 0:
+                if step % 1 == 0:
                     print('-'*50)
                     print('step', step)
 
@@ -66,9 +67,10 @@ def run_train():
                                                                                  list_labels[2]: labels[:, 2],
                                                                                  list_labels[3]: labels[:, 3],
                                                                                  list_labels[4]: labels[:, 4]})
-
                     print('first digits of first 10 samples', actual_labels[:10])
                     print('predict first digits of first 10 samples', np.argmax(predicted_logits[:10], axis=1))
+                    print('predict first digits of first 10 samples', predicted_logits[:5])
+                    print('images', images[:10, 0, 0, 0])
                     print()
 
 

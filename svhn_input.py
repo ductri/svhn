@@ -123,7 +123,7 @@ def load_data():
                 right = int(max(image_dict[names[i]]['left'])) + int(max(image_dict[names[i]]['width']))
                 lower = int(max(image_dict[names[i]]['top'])) + int(max(image_dict[names[i]]['height']))
                 image = image.crop(box = (left, upper, right, lower))
-                image = image.resize([32,32])
+                image = image.resize([32, 32])
                 image_array = numpy.array(image)
                 x.append(image_array)
                 if (i%1000 == 0):
@@ -163,8 +163,8 @@ def load_data():
     f_test = gzip.open(os.path.join(SVHN_DATASET_PATH, 'testpkl.gz'), 'rb')
     test_set = pickle.load(f_test)
 
-    train_set['images'] = train_set['images']
-    train_set['labels'] = train_set['labels']
+    train_set['images'] = train_set['images'][:1280]
+    train_set['labels'] = train_set['labels'][:1280]
     f_test.close()
     return train_set, test_set
 
@@ -193,7 +193,7 @@ def show_sample(images, labels):
 def standardize_value(dataset):
     for i in range(len(dataset['images'])):
         gray_image = np.array(Image.fromarray(dataset['images'][i]).convert('L')) * 1.0
-        normalized_image = (gray_image - 255)/255
+        normalized_image = (gray_image - 128)/255
         dataset['images'][i] = normalized_image
     dataset['images'] = np.array(dataset['images'])
 
@@ -229,9 +229,10 @@ def get_batch(batch_size=128, num_epoch=10):
 if __name__ == '__main__':
     bootstrap()
     index = 0
-    # for images, labels in get_batch(batch_size=128, num_epoch=1):
-    #     print(labels.shape)
-    #     index += 1
-    #     if index == 300:
-    #         break
+    for images, labels in get_batch(batch_size=128, num_epoch=1):
+        print('shape', images.shape)
+        print('images1', images)
+        index += 1
+        if index == 2:
+            break
 
