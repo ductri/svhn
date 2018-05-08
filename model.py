@@ -115,10 +115,7 @@ def loss(list_logits, list_labels):
         fucking_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=list_labels[i], logits=list_logits[i])
         loss = tf.reduce_mean(fucking_losses)
         losses.append(loss)
-        if i == 0:
-            tf.summary.scalar('loss_0', loss)
     total_loss = tf.reduce_sum(losses)
-    tf.summary.scalar('total_loss', total_loss)
     return total_loss
 
 
@@ -132,5 +129,4 @@ def train(total_loss, global_step):
                                     staircase=True)
     optimizer = tf.train.GradientDescentOptimizer(lr).minimize(total_loss)
     return optimizer
-
 

@@ -8,6 +8,7 @@ import gzip
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
+import tensorflow as tf
 
 IMAGE_SIZE = 32
 NUM_CLASSES = 11
@@ -18,14 +19,20 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10000
 
 
 train_set, test_set = None, None
+FLAGS = tf.flags.FLAGS
+tf.flags.DEFINE_string('ALL_DATASET_PATH', '/root/code/all_dataset', 'path to all_dataset')
 
 
 def load_data():
-    ''' Loads the SVHN dataset
+    """
+    Loads the SVHN dataset
     :type ds_rate: float
     :param ds_rate: downsample rate; should be larger than 1, if provided.
-    '''
-    ALL_DATASET_PATH = '/home/ductri/code/all_dataset'
+    :return:
+    """
+
+    ALL_DATASET_PATH = FLAGS.ALL_DATASET_PATH
+
     SVHN_DATASET_PATH = os.path.join(ALL_DATASET_PATH, 'svhn')
     # Download the SVHN dataset if it is not present
     def check_dataset(dataset):
@@ -163,8 +170,8 @@ def load_data():
     f_test = gzip.open(os.path.join(SVHN_DATASET_PATH, 'testpkl.gz'), 'rb')
     test_set = pickle.load(f_test)
 
-    train_set['images'] = train_set['images'][:1280]
-    train_set['labels'] = train_set['labels'][:1280]
+    train_set['images'] = train_set['images']
+    train_set['labels'] = train_set['labels']
     f_test.close()
     return train_set, test_set
 
@@ -224,6 +231,10 @@ def get_batch(batch_size=128, num_epoch=10):
         for batch_idx in range(num_batch_per_epoch-1):
             yield (shuffled_images[batch_idx*batch_size:(batch_idx+1)*batch_size],
                    shuffled_labels[batch_idx*batch_size:(batch_idx+1)*batch_size])
+
+
+def get_test(size=10000):
+    return test_set['images'][:size], test_set['labels'][:size]
 
 
 if __name__ == '__main__':
