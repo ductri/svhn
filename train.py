@@ -10,6 +10,8 @@ import svhn_input
 IMAGE_SIZE = model.IMAGE_SIZE
 NUM_DIGITS = model.NUM_DIGITS
 BATCH_SIZE = model.BATCH_SIZE
+CHECKPOINT_DIR = './models/'
+PREFIX = 'ver1'
 
 
 def run_train():
@@ -22,11 +24,11 @@ def run_train():
     with tf.Graph().as_default():
         global_step = tf.train.get_or_create_global_step()
 
-        input_train_placeholder = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, 1])
+        input_train_placeholder = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, 1], name='input_train_placeholder')
 
         list_labels = []
         for i in range(NUM_DIGITS):
-            list_labels.append(tf.placeholder(dtype=tf.int32, shape=[BATCH_SIZE]))
+            list_labels.append(tf.placeholder(dtype=tf.int32, shape=[BATCH_SIZE], name='labels_{}'.format(i)))
 
         list_logits = model.inference(images=input_train_placeholder)
 
@@ -72,7 +74,7 @@ def run_train():
                      })
                     train_writer.add_summary(summary, step)
 
-                    path = saver.save(sess, save_path='./models/ver1', global_step=step)
+                    path = saver.save(sess, save_path=CHECKPOINT_DIR+PREFIX, global_step=step)
                     print('Saved model at {}'.format(path))
 
                 step += 1
