@@ -23,23 +23,15 @@ def run_train():
         global_step = tf.train.get_or_create_global_step()
 
         input_train_placeholder = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, 1])
-        input_test_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 1])
 
         list_labels = []
         for i in range(NUM_DIGITS):
             list_labels.append(tf.placeholder(dtype=tf.int32, shape=[BATCH_SIZE]))
 
-        list_test_labels = []
-        for i in range(NUM_DIGITS):
-            list_test_labels.append(tf.placeholder(dtype=tf.int32, shape=[None]))
-
         list_logits = model.inference(images=input_train_placeholder)
-        list_logits_test = model.inference(images=input_test_placeholder)
 
         batch_loss = model.loss(list_logits, list_labels)
         tf.summary.scalar('training_loss', batch_loss)
-        batch_test_loss = model.loss(list_logits_test, list_test_labels)
-        tf.summary.scalar('test_loss', batch_test_loss)
 
         optimizer = model.train(batch_loss, global_step)
 
@@ -49,12 +41,14 @@ def run_train():
 
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = 0.3
+
+        saver = tf.train.Saver(tf.global_variables(), max_to_keep=5)
+
         with tf.Session(config=config) as sess:
             # Run the initializer
             sess.run(init)
             step = 0
-            test_images, test_labels = svhn_input.get_test()
-            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=100):
+            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=500):
                 images = images.reshape(list(images.shape) + [1])
                 labels = np.array(labels, dtype=int)
 
@@ -64,14 +58,9 @@ def run_train():
                      list_labels[1]: labels[:, 1],
                      list_labels[2]: labels[:, 2],
                      list_labels[3]: labels[:, 3],
-                     list_labels[4]: labels[:, 4],
-                     input_test_placeholder: test_images,
-                     list_test_labels[0]: test_labels[:, 0],
-                     list_test_labels[1]: test_labels[:, 1],
-                     list_test_labels[2]: test_labels[:, 2],
-                     list_test_labels[3]: test_labels[:, 3],
-                     list_test_labels[4]: test_labels[:, 4]
+                     list_labels[4]: labels[:, 4]
                      })
+
                 if step%10 == 0:
                     summary = sess.run(merged, feed_dict=
                     {input_train_placeholder: images,
@@ -79,15 +68,13 @@ def run_train():
                      list_labels[1]: labels[:, 1],
                      list_labels[2]: labels[:, 2],
                      list_labels[3]: labels[:, 3],
-                     list_labels[4]: labels[:, 4],
-                     input_test_placeholder: test_images,
-                     list_test_labels[0]: test_labels[:, 0],
-                     list_test_labels[1]: test_labels[:, 1],
-                     list_test_labels[2]: test_labels[:, 2],
-                     list_test_labels[3]: test_labels[:, 3],
-                     list_test_labels[4]: test_labels[:, 4]
+                     list_labels[4]: labels[:, 4]
                      })
                     train_writer.add_summary(summary, step)
+
+                    path = saver.save(sess, save_path='./models/ver1', global_step=step)
+                    print('Saved model at {}'.format(path))
+
                 step += 1
 
                 if step % 100 == 0:
@@ -100,13 +87,7 @@ def run_train():
                      list_labels[1]: labels[:, 1],
                      list_labels[2]: labels[:, 2],
                      list_labels[3]: labels[:, 3],
-                     list_labels[4]: labels[:, 4],
-                     input_test_placeholder: test_images,
-                     list_test_labels[0]: test_labels[:, 0],
-                     list_test_labels[1]: test_labels[:, 1],
-                     list_test_labels[2]: test_labels[:, 2],
-                     list_test_labels[3]: test_labels[:, 3],
-                     list_test_labels[4]: test_labels[:, 4]
+                     list_labels[4]: labels[:, 4]
                      })
                     print('first digits of first 10 samples', actual_labels[:10])
                     print('predict first digits of first 10 samples', np.argmax(predicted_logits[:10], axis=1))
