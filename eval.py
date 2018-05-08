@@ -44,7 +44,7 @@ def eval_once(images, labels):
             for i in range(list_predictions.shape[0]):
                 if (list_predictions[i] == labels[i]).all():
                     counter += 1
-            print('accuracy: {}/{}={:2f}'.format(counter, list_predictions.shape[0], counter / list_predictions.shape[0]))
+            print('accuracy: {}/{}={:2f}'.format(counter, list_predictions.shape[0], counter*1.0 / list_predictions.shape[0]))
 
             n = 10
             first_10_labels = labels[:n, :]
