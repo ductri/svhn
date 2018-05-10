@@ -41,7 +41,7 @@ def run_train():
         list_top_k_op = []
         for i in range(NUM_DIGITS):
             top_k_op = tf.nn.in_top_k(list_logits[i], list_labels[i], 1)
-            list_top_k_op.append(tf.reduce_mean(tf.cast(top_k_op, dtype=tf.int8)))
+            list_top_k_op.append(tf.reduce_mean(tf.cast(top_k_op, dtype=tf.float32)))
         batch_accuracy = tf.reduce_mean(list_top_k_op)
         batch_accuracy_summary = tf.summary.scalar('batch_accuracy', batch_accuracy)
 
@@ -51,7 +51,7 @@ def run_train():
         test_writer = tf.summary.FileWriter('log/test_{}'.format(now), graph=graph)
 
         config = tf.ConfigProto()
-        config.gpu_options.per_process_gpu_memory_fraction = 0.3
+        config.gpu_options.per_process_gpu_memory_fraction = 0.5
 
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=5)
 
@@ -59,11 +59,10 @@ def run_train():
             # Run the initializer
             sess.run(init)
             step = 0
-            test_images, test_labels = svhn_input.get_test(size=10000)
+            test_images, test_labels = svhn_input.get_test(size=1000)
             test_images = test_images.reshape(list(test_images.shape) + [1])
             for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=500):
                 images = images.reshape(list(images.shape) + [1])
-                labels = np.array(labels, dtype=int)
 
                 sess.run(optimizer, feed_dict=
                     {input_train_placeholder: images,
