@@ -21,7 +21,7 @@ def run_train():
     :param labels_array: list of 5 items whose shape=batch_size
     :return:
     """
-    with tf.Graph().as_default():
+    with tf.Graph().as_default() as graph:
         global_step = tf.train.get_or_create_global_step()
 
         input_train_placeholder = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, 1], name='input_train_placeholder')
@@ -33,13 +33,16 @@ def run_train():
         list_logits = model.inference(images=input_train_placeholder)
 
         batch_loss = model.loss(list_logits, list_labels)
-        tf.summary.scalar('training_loss', batch_loss)
+        training_loss_summary = tf.summary.scalar('total_loss', batch_loss)
+        # testing_loss_summary = tf.summary.scalar('total_loss', batch_loss)
 
         optimizer = model.train(batch_loss, global_step)
 
         init = tf.global_variables_initializer()
-        merged = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter('log/{}'.format(str(datetime.now())))
+        # merged = tf.summary.merge_all()
+        now = str(datetime.now())
+        train_writer = tf.summary.FileWriter('log/train_{}'.format(now), graph=graph)
+        test_writer = tf.summary.FileWriter('log/test_{}'.format(now), graph=graph)
 
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = 0.3
@@ -50,6 +53,8 @@ def run_train():
             # Run the initializer
             sess.run(init)
             step = 0
+            test_images, test_labels = svhn_input.get_test(size=BATCH_SIZE)
+            test_images = test_images.reshape(list(test_images.shape) + [1])
             for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=500):
                 images = images.reshape(list(images.shape) + [1])
                 labels = np.array(labels, dtype=int)
@@ -64,7 +69,7 @@ def run_train():
                      })
 
                 if step%10 == 0:
-                    summary = sess.run(merged, feed_dict=
+                    summary = sess.run(training_loss_summary, feed_dict=
                     {input_train_placeholder: images,
                      list_labels[0]: labels[:, 0],
                      list_labels[1]: labels[:, 1],
@@ -73,6 +78,16 @@ def run_train():
                      list_labels[4]: labels[:, 4]
                      })
                     train_writer.add_summary(summary, step)
+
+                    summary = sess.run(training_loss_summary, feed_dict=
+                    {input_train_placeholder: test_images,
+                     list_labels[0]: test_labels[:, 0],
+                     list_labels[1]: test_labels[:, 1],
+                     list_labels[2]: test_labels[:, 2],
+                     list_labels[3]: test_labels[:, 3],
+                     list_labels[4]: test_labels[:, 4]
+                     })
+                    test_writer.add_summary(summary, step)
 
                     path = saver.save(sess, save_path=CHECKPOINT_DIR+PREFIX, global_step=step)
                     print('Saved model at {}'.format(path))
