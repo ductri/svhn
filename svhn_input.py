@@ -172,6 +172,8 @@ def load_data():
 
     train_set['images'] = train_set['images']
     train_set['labels'] = train_set['labels']
+    print('Training size: {}'.format(len(train_set['images'])))
+    print('Testing size: {}'.format(len(test_set['images'])))
     f_test.close()
     return train_set, test_set
 

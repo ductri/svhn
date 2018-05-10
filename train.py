@@ -24,22 +24,28 @@ def run_train():
     with tf.Graph().as_default() as graph:
         global_step = tf.train.get_or_create_global_step()
 
-        input_train_placeholder = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, 1], name='input_train_placeholder')
+        input_train_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 1], name='input_train_placeholder')
 
         list_labels = []
         for i in range(NUM_DIGITS):
-            list_labels.append(tf.placeholder(dtype=tf.int32, shape=[BATCH_SIZE], name='labels_{}'.format(i)))
+            list_labels.append(tf.placeholder(dtype=tf.int32, shape=[None], name='labels_{}'.format(i)))
 
         list_logits = model.inference(images=input_train_placeholder)
 
         batch_loss = model.loss(list_logits, list_labels)
-        training_loss_summary = tf.summary.scalar('total_loss', batch_loss)
-        # testing_loss_summary = tf.summary.scalar('total_loss', batch_loss)
+        batch_loss_summary = tf.summary.scalar('total_loss', batch_loss)
 
         optimizer = model.train(batch_loss, global_step)
 
+        # Accuracy
+        list_top_k_op = []
+        for i in range(NUM_DIGITS):
+            top_k_op = tf.nn.in_top_k(list_logits[i], list_labels[i], 1)
+            list_top_k_op.append(tf.reduce_mean(tf.cast(top_k_op, dtype=tf.int8)))
+        batch_accuracy = tf.reduce_mean(list_top_k_op)
+        batch_accuracy_summary = tf.summary.scalar('batch_accuracy', batch_accuracy)
+
         init = tf.global_variables_initializer()
-        # merged = tf.summary.merge_all()
         now = str(datetime.now())
         train_writer = tf.summary.FileWriter('log/train_{}'.format(now), graph=graph)
         test_writer = tf.summary.FileWriter('log/test_{}'.format(now), graph=graph)
@@ -53,7 +59,7 @@ def run_train():
             # Run the initializer
             sess.run(init)
             step = 0
-            test_images, test_labels = svhn_input.get_test(size=BATCH_SIZE)
+            test_images, test_labels = svhn_input.get_test(size=10000)
             test_images = test_images.reshape(list(test_images.shape) + [1])
             for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=500):
                 images = images.reshape(list(images.shape) + [1])
@@ -69,7 +75,7 @@ def run_train():
                      })
 
                 if step%10 == 0:
-                    summary = sess.run(training_loss_summary, feed_dict=
+                    summary1, summary2 = sess.run([batch_loss_summary, batch_accuracy_summary], feed_dict=
                     {input_train_placeholder: images,
                      list_labels[0]: labels[:, 0],
                      list_labels[1]: labels[:, 1],
@@ -77,9 +83,10 @@ def run_train():
                      list_labels[3]: labels[:, 3],
                      list_labels[4]: labels[:, 4]
                      })
-                    train_writer.add_summary(summary, step)
+                    train_writer.add_summary(summary1, step)
+                    train_writer.add_summary(summary2, step)
 
-                    summary = sess.run(training_loss_summary, feed_dict=
+                    summary1, summary2 = sess.run([batch_loss_summary, batch_accuracy_summary], feed_dict=
                     {input_train_placeholder: test_images,
                      list_labels[0]: test_labels[:, 0],
                      list_labels[1]: test_labels[:, 1],
@@ -87,7 +94,8 @@ def run_train():
                      list_labels[3]: test_labels[:, 3],
                      list_labels[4]: test_labels[:, 4]
                      })
-                    test_writer.add_summary(summary, step)
+                    test_writer.add_summary(summary1, step)
+                    test_writer.add_summary(summary2, step)
 
                     path = saver.save(sess, save_path=CHECKPOINT_DIR+PREFIX, global_step=step)
                     print('Saved model at {}'.format(path))

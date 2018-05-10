@@ -68,7 +68,7 @@ def inference(images):
         # local3
     with tf.variable_scope('local3') as scope:
         # Move everything into depth so we can perform a single matrix multiply.
-        reshape = tf.reshape(norm2, [images.get_shape().as_list()[0], -1])
+        reshape = tf.reshape(norm2, [-1, norm2.get_shape()[1]*norm2.get_shape()[2]*norm2.get_shape()[3]])
         dim = reshape.get_shape()[1].value
         num_weights3 = 500
         if USE_FP16:
