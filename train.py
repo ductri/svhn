@@ -15,7 +15,13 @@ PREFIX = 'ver1'
 FLAGS = tf.flags.FLAGS
 
 tf.flags.DEFINE_integer('TEST_SIZE', 1000, 'test size, max is ~ 10000')
-print('TEST_SIZE', FLAGS.TEST_SIZE)
+
+
+with open('global_index', 'rt') as output_file:
+    global_index = int(output_file.read())
+global_index += 1
+with open('global_index', 'wt') as output_file:
+    output_file.write(str(global_index))
 
 
 def run_train():
@@ -48,9 +54,9 @@ def run_train():
         batch_absolute_accuracy_summary = tf.summary.scalar('batch_absolute_accuracy', batch_absolute_accuracy)
 
         init = tf.global_variables_initializer()
-        now = str(datetime.now())
-        train_writer = tf.summary.FileWriter('log/train_{}'.format(now), graph=graph)
-        test_writer = tf.summary.FileWriter('log/test_{}'.format(now), graph=graph)
+
+        train_writer = tf.summary.FileWriter('log/train_{}'.format(name_logging()), graph=graph)
+        test_writer = tf.summary.FileWriter('log/test_{}'.format(name_logging()), graph=graph)
 
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = 0.5
@@ -63,7 +69,7 @@ def run_train():
             step = 0
             test_images, test_labels = svhn_input.get_test(size=FLAGS.TEST_SIZE)
             test_images = test_images.reshape(list(test_images.shape) + [1])
-            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=500):
+            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=50):
                 images = images.reshape(list(images.shape) + [1])
 
                 sess.run(optimizer, feed_dict=
@@ -122,6 +128,11 @@ def run_train():
                     print('predict first digits of first 10 samples', predicted_logits[:5])
                     print('images', images[:10, 0, 0, 0])
                     print()
+
+
+def name_logging():
+    return 'LOCAL3_WEIGHT_SIZE={},CONV1_KERNEL_SIZE={},CONV2_KERNEL_SIZE={},CONV1_CHANNEL_OUT={},CONV2_CHANNEL_OUT={},TEST_SIZE={},GLOBAL_INDEX={}'\
+               .format(FLAGS.LOCAL3_WEIGHT_SIZE, FLAGS.CONV1_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE, FLAGS.CONV1_CHANNEL_OUT,  FLAGS.CONV2_CHANNEL_OUT, FLAGS.TEST_SIZE, global_index)
 
 
 def main(argv=None):  # pylint: disable=unused-argument
