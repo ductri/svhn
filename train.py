@@ -15,7 +15,7 @@ PREFIX = 'ver1'
 FLAGS = tf.flags.FLAGS
 
 tf.flags.DEFINE_integer('TEST_SIZE', 1000, 'test size, max is ~ 10000')
-print(FLAGS.TEST_SIZE)
+print('TEST_SIZE', FLAGS.TEST_SIZE)
 
 
 def run_train():

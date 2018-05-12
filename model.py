@@ -7,6 +7,21 @@ import my_summarizer
 FLAGS = tf.flags.FLAGS
 # tf.flags.DEFINE_integer('batch_size', 128)
 # tf.flags.DEFINE_boolean('use_fp16', False)
+tf.flags.DEFINE_integer('LOCAL3_WEIGHT_SIZE', 500, 'size of weights in local3')
+tf.flags.DEFINE_integer('CONV1_KERNEL_SIZE', 5, 'size of kernel in conv1')
+tf.flags.DEFINE_integer('CONV2_KERNEL_SIZE', 5, 'size of kernel in conv2')
+tf.flags.DEFINE_integer('CONV1_CHANNEL_OUT', 16, 'number of filters in conv1')
+tf.flags.DEFINE_integer('CONV2_CHANNEL_OUT', 32, 'number of filters in conv2')
+
+print('*'*50)
+print('Model parameter')
+print('LOCAL3_WEIGHT_SIZE', FLAGS.LOCAL3_WEIGHT_SIZE)
+print('CONV1_KERNEL_SIZE', FLAGS.CONV1_KERNEL_SIZE)
+print('CONV1_CHANNEL_OUT', FLAGS.CONV1_CHANNEL_OUT)
+print('CONV2_KERNEL_SIZE', FLAGS.CONV2_KERNEL_SIZE)
+print('CONV2_CHANNEL_OUT', FLAGS.CONV2_CHANNEL_OUT)
+
+
 USE_FP16 = False
 BATCH_SIZE = 128
 
@@ -33,8 +48,8 @@ def inference(images):
     :return: Logits
     """
     with tf.variable_scope('conv1') as scope:
-        channels_out1 = 16
-        kernel = tf.get_variable('weights_conv1', shape=[5, 5, 1, channels_out1], dtype=tf.float32,
+        channels_out1 = FLAGS.CONV1_CHANNEL_OUT
+        kernel = tf.get_variable('weights_conv1', shape=[FLAGS.CONV1_KERNEL_SIZE, FLAGS.CONV1_KERNEL_SIZE, 1, channels_out1], dtype=tf.float32,
                                  initializer=tf.truncated_normal_initializer(stddev=5e-2))
         tf.summary.histogram('weight', kernel)
         stride1 = 1
@@ -50,9 +65,9 @@ def inference(images):
         my_summarizer.activation_summary(norm1)
 
     with tf.variable_scope('conv2') as scope:
-        channels_out2 = 32
+        channels_out2 = FLAGS.CONV2_CHANNEL_OUT
         if USE_FP16:
-            kernel = tf.get_variable('weights', shape=[5, 5, channels_out1, channels_out2], dtype=tf.float16, initializer=tf.truncated_normal_initializer(stddev=5e-2))
+            kernel = tf.get_variable('weights', shape=[FLAGS.CONV2_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE, channels_out1, channels_out2], dtype=tf.float16, initializer=tf.truncated_normal_initializer(stddev=5e-2))
         else:
             kernel = tf.get_variable('weights', shape=[5, 5, channels_out1, channels_out2], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=5e-2))
         tf.summary.histogram('weight', kernel)
@@ -70,7 +85,7 @@ def inference(images):
         # Move everything into depth so we can perform a single matrix multiply.
         reshape = tf.reshape(norm2, [-1, norm2.get_shape()[1]*norm2.get_shape()[2]*norm2.get_shape()[3]])
         dim = reshape.get_shape()[1].value
-        num_weights3 = 500
+        num_weights3 = FLAGS.LOCAL3_WEIGHT_SIZE
         if USE_FP16:
             weights = tf.get_variable('weights', shape=[dim, num_weights3], dtype=tf.float16, initializer=tf.truncated_normal_initializer(stddev=5e-2))
         else:
