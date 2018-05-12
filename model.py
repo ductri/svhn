@@ -130,3 +130,35 @@ def train(total_loss, global_step):
     optimizer = tf.train.GradientDescentOptimizer(lr).minimize(total_loss)
     return optimizer
 
+
+def get_absolute_accurary(list_logits, list_labels):
+    """
+
+    :param list_logits: get from inference(). len(list_logits) == NUM_DIGITS, shape of each item is (batch_size, num_classes)
+    :param list_labels: list of 1-D tensor (batch_size) in the order of appearing in image, len(list_labels) == NUM_DIGITS, shape of each item is (batch_size), range from 0 to 10 (11 classes)
+    :return:
+    """
+    list_top_k_op = []
+    for i in range(NUM_DIGITS):
+        top_k_op = tf.nn.in_top_k(list_logits[i], list_labels[i], 1)
+        list_top_k_op.append(top_k_op)
+    reduced_op = tf.reduce_all(list_top_k_op, axis=0)
+    batch_accuracy = tf.reduce_mean(tf.cast(reduced_op, dtype=tf.float32))
+    return batch_accuracy
+
+
+def get_accurary(list_logits, list_labels):
+    """
+
+    :param list_logits: get from inference(). len(list_logits) == NUM_DIGITS, shape of each item is (batch_size, num_classes)
+    :param list_labels: list of 1-D tensor (batch_size) in the order of appearing in image, len(list_labels) == NUM_DIGITS, shape of each item is (batch_size), range from 0 to 10 (11 classes)
+    :return:
+    """
+    list_top_k_op = []
+    for i in range(NUM_DIGITS):
+        top_k_op = tf.nn.in_top_k(list_logits[i], list_labels[i], 1)
+        list_top_k_op.append(tf.reduce_mean(tf.cast(top_k_op, dtype=tf.float32)))
+    batch_accuracy = tf.reduce_mean(list_top_k_op)
+    return batch_accuracy
+
+

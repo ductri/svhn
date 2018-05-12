@@ -12,6 +12,10 @@ NUM_DIGITS = model.NUM_DIGITS
 BATCH_SIZE = model.BATCH_SIZE
 CHECKPOINT_DIR = './models/'
 PREFIX = 'ver1'
+FLAGS = tf.flags.FLAGS
+
+tf.flags.DEFINE_integer('TEST_SIZE', 1000, 'test size, max is ~ 10000')
+print(FLAGS.TEST_SIZE)
 
 
 def run_train():
@@ -38,12 +42,10 @@ def run_train():
         optimizer = model.train(batch_loss, global_step)
 
         # Accuracy
-        list_top_k_op = []
-        for i in range(NUM_DIGITS):
-            top_k_op = tf.nn.in_top_k(list_logits[i], list_labels[i], 1)
-            list_top_k_op.append(tf.reduce_mean(tf.cast(top_k_op, dtype=tf.float32)))
-        batch_accuracy = tf.reduce_mean(list_top_k_op)
+        batch_accuracy = model.get_accurary(list_logits, list_labels)
+        batch_absolute_accuracy = model.get_absolute_accurary(list_logits, list_labels)
         batch_accuracy_summary = tf.summary.scalar('batch_accuracy', batch_accuracy)
+        batch_absolute_accuracy_summary = tf.summary.scalar('batch_absolute_accuracy', batch_absolute_accuracy)
 
         init = tf.global_variables_initializer()
         now = str(datetime.now())
@@ -59,7 +61,7 @@ def run_train():
             # Run the initializer
             sess.run(init)
             step = 0
-            test_images, test_labels = svhn_input.get_test(size=1000)
+            test_images, test_labels = svhn_input.get_test(size=FLAGS.TEST_SIZE)
             test_images = test_images.reshape(list(test_images.shape) + [1])
             for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=500):
                 images = images.reshape(list(images.shape) + [1])
@@ -74,7 +76,7 @@ def run_train():
                      })
 
                 if step%10 == 0:
-                    summary1, summary2 = sess.run([batch_loss_summary, batch_accuracy_summary], feed_dict=
+                    summary1, summary2, summary3 = sess.run([batch_loss_summary, batch_accuracy_summary, batch_absolute_accuracy_summary], feed_dict=
                     {input_train_placeholder: images,
                      list_labels[0]: labels[:, 0],
                      list_labels[1]: labels[:, 1],
@@ -84,8 +86,9 @@ def run_train():
                      })
                     train_writer.add_summary(summary1, step)
                     train_writer.add_summary(summary2, step)
+                    train_writer.add_summary(summary3, step)
 
-                    summary1, summary2 = sess.run([batch_loss_summary, batch_accuracy_summary], feed_dict=
+                    summary1, summary2, summary3 = sess.run([batch_loss_summary, batch_accuracy_summary, batch_absolute_accuracy_summary], feed_dict=
                     {input_train_placeholder: test_images,
                      list_labels[0]: test_labels[:, 0],
                      list_labels[1]: test_labels[:, 1],
@@ -95,6 +98,7 @@ def run_train():
                      })
                     test_writer.add_summary(summary1, step)
                     test_writer.add_summary(summary2, step)
+                    test_writer.add_summary(summary3, step)
 
                     path = saver.save(sess, save_path=CHECKPOINT_DIR+PREFIX, global_step=step)
                     print('Saved model at {}'.format(path))
