@@ -12,14 +12,12 @@ tf.flags.DEFINE_integer('CONV1_KERNEL_SIZE', 5, 'size of kernel in conv1')
 tf.flags.DEFINE_integer('CONV2_KERNEL_SIZE', 5, 'size of kernel in conv2')
 tf.flags.DEFINE_integer('CONV1_CHANNEL_OUT', 16, 'number of filters in conv1')
 tf.flags.DEFINE_integer('CONV2_CHANNEL_OUT', 32, 'number of filters in conv2')
+tf.flags.DEFINE_float('CONV1_DROPOUT', 0.5, 'number of filters in conv2')
+tf.flags.DEFINE_float('CONV2_DROPOUT', 0.5, 'number of filters in conv2')
 
 print('*'*50)
 print('Model parameter')
-print('LOCAL3_WEIGHT_SIZE', FLAGS.LOCAL3_WEIGHT_SIZE)
-print('CONV1_KERNEL_SIZE', FLAGS.CONV1_KERNEL_SIZE)
-print('CONV1_CHANNEL_OUT', FLAGS.CONV1_CHANNEL_OUT)
-print('CONV2_KERNEL_SIZE', FLAGS.CONV2_KERNEL_SIZE)
-print('CONV2_CHANNEL_OUT', FLAGS.CONV2_CHANNEL_OUT)
+print(FLAGS)
 
 
 USE_FP16 = False
@@ -62,6 +60,7 @@ def inference(images):
 
         # TODO read more in paper
         norm1 = tf.nn.lrn(pool1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm') # shape=batch_size, height, width, channels_out1
+        norm1 = tf.nn.dropout(norm1, keep_prob=FLAGS.CONV1_DROPOUT)
         my_summarizer.activation_summary(norm1)
 
     with tf.variable_scope('conv2') as scope:
@@ -78,6 +77,7 @@ def inference(images):
         activation2 = tf.nn.relu(features=pre_activation2)  # shape=batch_size, height, width, channels_out2
         pool2 = tf.nn.max_pool(value=activation2, ksize=[1, 3, 3, 1], strides=[1, 1, 1, 1], padding='SAME')
         norm2 = tf.nn.lrn(pool2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm')  # TODO read more in paper
+        norm2 = tf.nn.dropout(norm2, keep_prob=FLAGS.CONV2_DROPOUT)
         my_summarizer.activation_summary(norm2)
 
         # local3

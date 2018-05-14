@@ -14,8 +14,8 @@ CHECKPOINT_DIR = './models/'
 PREFIX = 'ver1'
 FLAGS = tf.flags.FLAGS
 
-tf.flags.DEFINE_integer('TEST_SIZE', 1000, 'test size, max is ~ 10000')
-
+tf.flags.DEFINE_integer('TEST_SIZE', 13068, 'test size, max is ~ 10000')
+print(FLAGS)
 
 with open('global_index', 'rt') as output_file:
     global_index = int(output_file.read())
@@ -66,7 +66,7 @@ def run_train():
         with tf.Session(config=config) as sess:
             # Run the initializer
             sess.run(init)
-            step = 0
+            step = 1
             test_images, test_labels = svhn_input.get_test(size=FLAGS.TEST_SIZE)
             test_images = test_images.reshape(list(test_images.shape) + [1])
             for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=50):
@@ -81,7 +81,7 @@ def run_train():
                      list_labels[4]: labels[:, 4]
                      })
 
-                if step%10 == 0:
+                if step % 10 == 0:
                     summary1, summary2, summary3 = sess.run([batch_loss_summary, batch_accuracy_summary, batch_absolute_accuracy_summary], feed_dict=
                     {input_train_placeholder: images,
                      list_labels[0]: labels[:, 0],
@@ -106,10 +106,9 @@ def run_train():
                     test_writer.add_summary(summary2, step)
                     test_writer.add_summary(summary3, step)
 
-                    path = saver.save(sess, save_path=CHECKPOINT_DIR+PREFIX, global_step=step)
+                if step % 500 == 0:
+                    path = saver.save(sess, save_path=CHECKPOINT_DIR + name_logging()+ '/' + PREFIX, global_step=step)
                     print('Saved model at {}'.format(path))
-
-                step += 1
 
                 if step % 100 == 0:
                     print('-'*50)
@@ -128,16 +127,18 @@ def run_train():
                     print('predict first digits of first 10 samples', predicted_logits[:5])
                     print('images', images[:10, 0, 0, 0])
                     print()
-
+                step += 1
 
 def name_logging():
-    return 'LOCAL3_WEIGHT_SIZE={},CONV1_KERNEL_SIZE={},CONV2_KERNEL_SIZE={},CONV1_CHANNEL_OUT={},CONV2_CHANNEL_OUT={},TEST_SIZE={},GLOBAL_INDEX={}'\
-               .format(FLAGS.LOCAL3_WEIGHT_SIZE, FLAGS.CONV1_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE, FLAGS.CONV1_CHANNEL_OUT,  FLAGS.CONV2_CHANNEL_OUT, FLAGS.TEST_SIZE, global_index)
+    return 'GLOBAL_INDEX={},LOCAL3_WEIGHT_SIZE={},CONV1_KERNEL_SIZE={},CONV2_KERNEL_SIZE={},CONV1_CHANNEL_OUT={},CONV2_CHANNEL_OUT={},TEST_SIZE={}'\
+               .format(global_index, FLAGS.LOCAL3_WEIGHT_SIZE, FLAGS.CONV1_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE, FLAGS.CONV1_CHANNEL_OUT,  FLAGS.CONV2_CHANNEL_OUT, FLAGS.TEST_SIZE)
 
 
 def main(argv=None):  # pylint: disable=unused-argument
     svhn_input.bootstrap()
     run_train()
+
+
 
 
 if __name__ == '__main__':
