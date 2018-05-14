@@ -4,17 +4,22 @@ from datetime import datetime
 
 import model
 
+
 import svhn_input
 
 
+FLAGS = tf.flags.FLAGS
 IMAGE_SIZE = model.IMAGE_SIZE
 NUM_DIGITS = model.NUM_DIGITS
 BATCH_SIZE = model.BATCH_SIZE
 CHECKPOINT_DIR = './models/'
 PREFIX = 'ver1'
-FLAGS = tf.flags.FLAGS
 
 tf.flags.DEFINE_integer('TEST_SIZE', 13068, 'test size, max is ~ 10000')
+tf.flags.DEFINE_integer('NUM_EPOCH', 100, 'number of epoch')
+
+print('*' * 50)
+print('train parameters')
 print(FLAGS)
 
 with open('global_index', 'rt') as output_file:
@@ -66,10 +71,11 @@ def run_train():
         with tf.Session(config=config) as sess:
             # Run the initializer
             sess.run(init)
-            step = 1
+            step = 0
             test_images, test_labels = svhn_input.get_test(size=FLAGS.TEST_SIZE)
             test_images = test_images.reshape(list(test_images.shape) + [1])
-            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=50):
+            for images, labels in svhn_input.get_batch(batch_size=BATCH_SIZE, num_epoch=FLAGS.NUM_EPOCH):
+                step += 1
                 images = images.reshape(list(images.shape) + [1])
 
                 sess.run(optimizer, feed_dict=
@@ -82,6 +88,7 @@ def run_train():
                      })
 
                 if step % 10 == 0:
+                    print(step)
                     summary1, summary2, summary3 = sess.run([batch_loss_summary, batch_accuracy_summary, batch_absolute_accuracy_summary], feed_dict=
                     {input_train_placeholder: images,
                      list_labels[0]: labels[:, 0],
@@ -110,24 +117,24 @@ def run_train():
                     path = saver.save(sess, save_path=CHECKPOINT_DIR + name_logging()+ '/' + PREFIX, global_step=step)
                     print('Saved model at {}'.format(path))
 
-                if step % 100 == 0:
-                    print('-'*50)
-                    print('step', step)
+                # if step % 100 == 0:
+                #     print('-'*50)
+                #     print('step', step)
+                #
+                #     actual_labels, predicted_logits, loss = sess.run([list_labels[0], list_logits[0], batch_loss],
+                #                                                      feed_dict={input_train_placeholder: images,
+                #      list_labels[0]: labels[:, 0],
+                #      list_labels[1]: labels[:, 1],
+                #      list_labels[2]: labels[:, 2],
+                #      list_labels[3]: labels[:, 3],
+                #      list_labels[4]: labels[:, 4]
+                #      })
+                #     print('first digits of first 10 samples', actual_labels[:10])
+                #     print('predict first digits of first 10 samples', np.argmax(predicted_logits[:10], axis=1))
+                #     print('predict first digits of first 10 samples', predicted_logits[:5])
+                #     print('images', images[:10, 0, 0, 0])
+                #     print()
 
-                    actual_labels, predicted_logits, loss = sess.run([list_labels[0], list_logits[0], batch_loss],
-                                                                     feed_dict={input_train_placeholder: images,
-                     list_labels[0]: labels[:, 0],
-                     list_labels[1]: labels[:, 1],
-                     list_labels[2]: labels[:, 2],
-                     list_labels[3]: labels[:, 3],
-                     list_labels[4]: labels[:, 4]
-                     })
-                    print('first digits of first 10 samples', actual_labels[:10])
-                    print('predict first digits of first 10 samples', np.argmax(predicted_logits[:10], axis=1))
-                    print('predict first digits of first 10 samples', predicted_logits[:5])
-                    print('images', images[:10, 0, 0, 0])
-                    print()
-                step += 1
 
 def name_logging():
     return 'GLOBAL_INDEX={},LOCAL3_WEIGHT_SIZE={},CONV1_KERNEL_SIZE={},CONV2_KERNEL_SIZE={},CONV1_CHANNEL_OUT={},CONV2_CHANNEL_OUT={},TEST_SIZE={}'\
