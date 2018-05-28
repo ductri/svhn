@@ -1,7 +1,8 @@
 version: '3'
 services:
- bsi:
+ svhn:
   image: trind/svhn
   volumes:
    - .:/source
   command: /bin/bash -c "python3 train.py"
+  runtime: nvidia
