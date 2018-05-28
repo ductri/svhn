@@ -1,0 +1,7 @@
+version: '3'
+services:
+ bsi:
+  image: trind/svhn
+  volumes:
+   - .:/source
+  command: /bin/bash -c "python3 train.py"
