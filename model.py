@@ -10,8 +10,6 @@ FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_integer('LOCAL3_WEIGHT_SIZE', 500, 'size of weights in local3')
 tf.flags.DEFINE_integer('CONV1_KERNEL_SIZE', 5, 'size of kernel in conv1')
 tf.flags.DEFINE_integer('CONV2_KERNEL_SIZE', 5, 'size of kernel in conv2')
-tf.flags.DEFINE_integer('CONV1_CHANNEL_OUT', 16, 'number of filters in conv1')
-tf.flags.DEFINE_integer('CONV2_CHANNEL_OUT', 32, 'number of filters in conv2')
 tf.flags.DEFINE_float('CONV1_DROPOUT', 0.5, 'number of filters in conv2')
 tf.flags.DEFINE_float('CONV2_DROPOUT', 0.5, 'number of filters in conv2')
 

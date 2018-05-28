@@ -60,8 +60,8 @@ def run_train():
 
         init = tf.global_variables_initializer()
 
-        train_writer = tf.summary.FileWriter('log/train_{}'.format(name_logging()), graph=graph)
-        test_writer = tf.summary.FileWriter('log/test_{}'.format(name_logging()), graph=graph)
+        train_writer = tf.summary.FileWriter('summary_logs/train_{}'.format(name_logging()), graph=graph)
+        test_writer = tf.summary.FileWriter('summary_logs/test_{}'.format(name_logging()), graph=graph)
 
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = 0.5
@@ -123,16 +123,12 @@ def name_logging():
     LOCAL3_WEIGHT_SIZE = 'w'
     CONV1_KERNEL_SIZE = 'e'
     CONV2_KERNEL_SIZE = 'r'
-    CONV1_CHANNEL_OUT = 't'
-    CONV2_CHANNEL_OUT = 'y'
     TEST_SIZE = 'u'
-    return '{}={},{}={},{}={},{}={},{}={},{}={},{}={}'\
+    return '{}={},{}={},{}={},{}={},{}={}'\
                .format(GLOBAL_INDEX, global_index,
                        LOCAL3_WEIGHT_SIZE, FLAGS.LOCAL3_WEIGHT_SIZE,
                        CONV1_KERNEL_SIZE, FLAGS.CONV1_KERNEL_SIZE,
                        CONV2_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE,
-                       CONV1_CHANNEL_OUT, FLAGS.CONV1_CHANNEL_OUT,
-                       CONV2_CHANNEL_OUT, FLAGS.CONV2_CHANNEL_OUT,
                        TEST_SIZE, FLAGS.TEST_SIZE)
 
 
