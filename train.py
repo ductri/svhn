@@ -117,28 +117,23 @@ def run_train():
                     path = saver.save(sess, save_path=CHECKPOINT_DIR + name_logging()+ '/' + PREFIX, global_step=step)
                     print('Saved model at {}'.format(path))
 
-                # if step % 100 == 0:
-                #     print('-'*50)
-                #     print('step', step)
-                #
-                #     actual_labels, predicted_logits, loss = sess.run([list_labels[0], list_logits[0], batch_loss],
-                #                                                      feed_dict={input_train_placeholder: images,
-                #      list_labels[0]: labels[:, 0],
-                #      list_labels[1]: labels[:, 1],
-                #      list_labels[2]: labels[:, 2],
-                #      list_labels[3]: labels[:, 3],
-                #      list_labels[4]: labels[:, 4]
-                #      })
-                #     print('first digits of first 10 samples', actual_labels[:10])
-                #     print('predict first digits of first 10 samples', np.argmax(predicted_logits[:10], axis=1))
-                #     print('predict first digits of first 10 samples', predicted_logits[:5])
-                #     print('images', images[:10, 0, 0, 0])
-                #     print()
-
 
 def name_logging():
-    return 'GLOBAL_INDEX={},LOCAL3_WEIGHT_SIZE={},CONV1_KERNEL_SIZE={},CONV2_KERNEL_SIZE={},CONV1_CHANNEL_OUT={},CONV2_CHANNEL_OUT={},TEST_SIZE={}'\
-               .format(global_index, FLAGS.LOCAL3_WEIGHT_SIZE, FLAGS.CONV1_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE, FLAGS.CONV1_CHANNEL_OUT,  FLAGS.CONV2_CHANNEL_OUT, FLAGS.TEST_SIZE)
+    GLOBAL_INDEX = 'q'
+    LOCAL3_WEIGHT_SIZE = 'w'
+    CONV1_KERNEL_SIZE = 'e'
+    CONV2_KERNEL_SIZE = 'r'
+    CONV1_CHANNEL_OUT = 't'
+    CONV2_CHANNEL_OUT = 'y'
+    TEST_SIZE = 'u'
+    return '{}={},{}={},{}={},{}={},{}={},{}={},{}={}'\
+               .format(GLOBAL_INDEX, global_index,
+                       LOCAL3_WEIGHT_SIZE, FLAGS.LOCAL3_WEIGHT_SIZE,
+                       CONV1_KERNEL_SIZE, FLAGS.CONV1_KERNEL_SIZE,
+                       CONV2_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE,
+                       CONV1_CHANNEL_OUT, FLAGS.CONV1_CHANNEL_OUT,
+                       CONV2_CHANNEL_OUT, FLAGS.CONV2_CHANNEL_OUT,
+                       TEST_SIZE, FLAGS.TEST_SIZE)
 
 
 def main(argv=None):  # pylint: disable=unused-argument

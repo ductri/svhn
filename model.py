@@ -46,7 +46,7 @@ def inference(images):
     :return: Logits
     """
     with tf.variable_scope('conv1') as scope:
-        channels_out1 = FLAGS.CONV1_CHANNEL_OUT
+        channels_out1 = 512
         kernel = tf.get_variable('weights_conv1', shape=[FLAGS.CONV1_KERNEL_SIZE, FLAGS.CONV1_KERNEL_SIZE, 1, channels_out1], dtype=tf.float32,
                                  initializer=tf.truncated_normal_initializer(stddev=5e-2))
         tf.summary.histogram('weight', kernel)
@@ -64,11 +64,11 @@ def inference(images):
         my_summarizer.activation_summary(norm1)
 
     with tf.variable_scope('conv2') as scope:
-        channels_out2 = FLAGS.CONV2_CHANNEL_OUT
+        channels_out2 = 256
         if USE_FP16:
             kernel = tf.get_variable('weights', shape=[FLAGS.CONV2_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE, channels_out1, channels_out2], dtype=tf.float16, initializer=tf.truncated_normal_initializer(stddev=5e-2))
         else:
-            kernel = tf.get_variable('weights', shape=[5, 5, channels_out1, channels_out2], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=5e-2))
+            kernel = tf.get_variable('weights', shape=[3, 3, channels_out1, channels_out2], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=5e-2))
         tf.summary.histogram('weight', kernel)
         stride2 = 1
         conv2 = tf.nn.conv2d(input=norm1, filter=kernel, strides=[1, stride2, stride2, 1], padding='SAME')
@@ -79,6 +79,27 @@ def inference(images):
         norm2 = tf.nn.lrn(pool2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm')  # TODO read more in paper
         norm2 = tf.nn.dropout(norm2, keep_prob=FLAGS.CONV2_DROPOUT)
         my_summarizer.activation_summary(norm2)
+    #
+    # with tf.variable_scope('conv3') as scope:
+    #     channels_out3 = FLAGS.CONV3_CHANNEL_OUT
+    #     if USE_FP16:
+    #         kernel = tf.get_variable('weights',
+    #                                  shape=[FLAGS.CONV2_KERNEL_SIZE, FLAGS.CONV2_KERNEL_SIZE, channels_out1,
+    #                                         channels_out2], dtype=tf.float16,
+    #                                  initializer=tf.truncated_normal_initializer(stddev=5e-2))
+    #     else:
+    #         kernel = tf.get_variable('weights', shape=[3, 3, channels_out1, channels_out2], dtype=tf.float32,
+    #                                  initializer=tf.truncated_normal_initializer(stddev=5e-2))
+    #     tf.summary.histogram('weight', kernel)
+    #     stride2 = 1
+    #     conv2 = tf.nn.conv2d(input=norm1, filter=kernel, strides=[1, stride2, stride2, 1], padding='SAME')
+    #     bias2 = tf.get_variable(name='bias', shape=[channels_out2], initializer=tf.constant_initializer(0))
+    #     pre_activation2 = tf.nn.bias_add(conv2, bias2)
+    #     activation2 = tf.nn.relu(features=pre_activation2)  # shape=batch_size, height, width, channels_out2
+    #     pool2 = tf.nn.max_pool(value=activation2, ksize=[1, 3, 3, 1], strides=[1, 1, 1, 1], padding='SAME')
+    #     norm2 = tf.nn.lrn(pool2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm')  # TODO read more in paper
+    #     norm2 = tf.nn.dropout(norm2, keep_prob=FLAGS.CONV2_DROPOUT)
+    #     my_summarizer.activation_summary(norm2)
 
         # local3
     with tf.variable_scope('local3') as scope:
