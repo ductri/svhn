@@ -6,7 +6,8 @@ RUN apt-get -qq update
 RUN apt-get install python-matplotlib
 RUN apt-get install python3-tk
 
-VOLUME /source
+VOLUME /source/
+VOLUME /all_dataset/
 
 WORKDIR /source
 
