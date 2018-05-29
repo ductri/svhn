@@ -4,5 +4,5 @@ services:
   image: trind/svhn
   volumes:
    - .:/source
-  command: /bin/bash -c "python3 train.py"
-  runtime: nvidia
+   - /root/code/all_dataset:/all_dataset/
+  command: /bin/bash -c "python train.py"

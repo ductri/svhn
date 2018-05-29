@@ -20,7 +20,7 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10000
 
 train_set, test_set = None, None
 FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_string('ALL_DATASET_PATH', '/root/code/all_dataset', 'path to all_dataset')
+tf.flags.DEFINE_string('ALL_DATASET_PATH', '/all_dataset', 'path to all_dataset')
 
 
 def load_data():
